@@ -27,9 +27,6 @@
 use Time::HiRes qw(usleep);
 use Env qw(BLOCK_INSTANCE);
 
-use constant DELAY => 50; # Delay in ms to let network-based players (spotify) reflect new data.
-use constant SPOTIFY_STR => 'spotify';
-
 my @metadata = ();
 my $player_arg = "";
 
@@ -40,19 +37,7 @@ if ($BLOCK_INSTANCE) {
 sub buttons {
     my $method = shift;
 
-    if($method eq 'mpd') {
-        if ($ENV{'BLOCK_BUTTON'} == 1) {
-            system("mpc prev &>/dev/null");
-        } elsif ($ENV{'BLOCK_BUTTON'} == 2) {
-            system("mpc toggle &>/dev/null");
-        } elsif ($ENV{'BLOCK_BUTTON'} == 3) {
-            system("mpc next &>/dev/null");
-        } elsif ($ENV{'BLOCK_BUTTON'} == 4) {
-            system("mpc volume +10 &>/dev/null");
-        } elsif ($ENV{'BLOCK_BUTTON'} == 5) {
-            system("mpc volume -10 &>/dev/null");
-        }
-    } elsif ($method eq 'cmus') {
+    if ($method eq 'cmus') {
         if ($ENV{'BLOCK_BUTTON'} == 1) {
             system("cmus-remote --prev");
         } elsif ($ENV{'BLOCK_BUTTON'} == 2) {
@@ -64,30 +49,7 @@ sub buttons {
 	} elsif ($ENV{'BLOCK_BUTTON'} == 5) {
 	    system("cmus-remote --volume -10%")
 	}
-
-    } elsif ($method eq 'playerctl') {
-        if ($ENV{'BLOCK_BUTTON'} == 1) {
-            system("playerctl $player_arg previous");
-            usleep(DELAY * 1000) if $BLOCK_INSTANCE eq SPOTIFY_STR;
-        } elsif ($ENV{'BLOCK_BUTTON'} == 2) {
-            system("playerctl $player_arg play-pause");
-        } elsif ($ENV{'BLOCK_BUTTON'} == 3) {
-            system("playerctl $player_arg next");
-            usleep(DELAY * 1000) if $BLOCK_INSTANCE eq SPOTIFY_STR;
-        } elsif ($ENV{'BLOCK_BUTTON'} == 4) {
-            system("playerctl $player_arg volume 0.01+");
-        } elsif ($ENV{'BLOCK_BUTTON'} == 5) {
-            system("playerctl $player_arg volume 0.01-");
-        }
-    } elsif ($method eq 'rhythmbox') {
-        if ($ENV{'BLOCK_BUTTON'} == 1) {
-            system("rhythmbox-client --previous");
-        } elsif ($ENV{'BLOCK_BUTTON'} == 2) {
-            system("rhythmbox-client --play-pause");
-        } elsif ($ENV{'BLOCK_BUTTON'} == 3) {
-            system("rhythmbox-client --next");
-        }
-    }
+    } 
 }
 
 sub cmus {
@@ -113,40 +75,6 @@ sub cmus {
             exit 0;
         }
     }
-}
-
-sub mpd {
-    my $data = qx(mpc current);
-    if (not $data eq '') {
-        buttons("mpd");
-        print($data);
-        exit 0;
-    }
-}
-
-sub playerctl {
-    buttons('playerctl');
-
-    my $artist = qx(playerctl $player_arg metadata artist 2>/dev/null);
-    chomp $artist;
-    # exit status will be nonzero when playerctl cannot find your player
-    exit(0) if $? || $artist eq '(null)';
-
-    push(@metadata, $artist) if $artist;
-
-    my $title = qx(playerctl $player_arg metadata title);
-    exit(0) if $? || $title eq '(null)';
-
-    push(@metadata, $title) if $title;
-
-    print(join(" - ", @metadata)) if @metadata;
-}
-
-sub rhythmbox {
-    buttons('rhythmbox');
-
-    my $data = qx(rhythmbox-client --print-playing --no-start);
-    print($data);
 }
 
 if ($player_arg =~ /mpd/) {
