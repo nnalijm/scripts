@@ -1,3 +1,10 @@
 #!/usr/bin/env bash
+
+## This simple script was written by me.
+## I had problems with already existed scripts on github
+## which should have showed screen brightness, but they didn't.
+## This is my solution.
+
 num="$(light -G | awk '{split($0, a, "."); print a[1]}')"
+# light -G | awk -F. '{print $1}';
 echo $num
